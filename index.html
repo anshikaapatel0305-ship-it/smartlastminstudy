@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Exam Emergency Kit 🚨</title>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- jsPDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+body {
+    font-family: Arial;
+    background-color: #0f3d2e;
+    color: white;
+    margin: 0;
+}
+
+header {
+    text-align: center;
+    padding: 15px;
+    background-color: #145c43;
+}
+
+.container {
+    text-align: center;
+    margin-top: 30px;
+}
+
+input {
+    padding: 10px;
+    margin: 5px;
+    border-radius: 5px;
+    border: none;
+}
+
+button {
+    padding: 10px 20px;
+    background-color: #1f7a5c;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.card {
+    background-color: #1b4d3e;
+    margin: 15px auto;
+    padding: 15px;
+    border-radius: 10px;
+    width: 85%;
+    text-align: left;
+}
+
+.hidden { display: none; }
+
+.flowchart {
+    text-align: center;
+    font-weight: bold;
+    line-height: 2;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>📚 Exam Emergency Kit 🚨</h1>
+</header>
+
+<!-- LOGIN -->
+<div id="loginPage" class="container">
+<h2>Login</h2>
+<input id="loginUser" placeholder="Username"><br>
+<input type="password" id="loginPass" placeholder="Password"><br>
+<button onclick="login()">Login</button>
+<p onclick="showSignup()" style="cursor:pointer;color:aqua;">Signup</p>
+</div>
+
+<!-- SIGNUP -->
+<div id="signupPage" class="container hidden">
+<h2>Signup</h2>
+<input id="signupUser" placeholder="Username"><br>
+<input type="password" id="signupPass" placeholder="Password"><br>
+<button onclick="signup()">Create Account</button>
+<p onclick="showLogin()" style="cursor:pointer;color:aqua;">Login</p>
+</div>
+
+<!-- MAIN -->
+<div id="mainPage" class="container hidden">
+<h2>Welcome <span id="userDisplay"></span></h2>
+
+<input id="subject" placeholder="Enter Subject">
+<button onclick="generateContent()">Generate</button>
+
+<div id="output"></div>
+
+<h2>📊 Progress Dashboard</h2>
+<canvas id="chart"></canvas>
+
+<button onclick="downloadPDF()">Download Notes as PDF</button>
+<button onclick="logout()">Logout</button>
+</div>
+
+<script>
+
+// PAGE SWITCH
+function showSignup(){loginPage.classList.add("hidden");signupPage.classList.remove("hidden");}
+function showLogin(){signupPage.classList.add("hidden");loginPage.classList.remove("hidden");}
+
+// SIGNUP
+function signup(){
+let u=signupUser.value,p=signupPass.value;
+let users=JSON.parse(localStorage.getItem("users"))||{};
+if(users[u]) return alert("User exists");
+users[u]=p;
+localStorage.setItem("users",JSON.stringify(users));
+alert("Account created");
+showLogin();
+}
+
+// LOGIN
+function login(){
+let u=loginUser.value,p=loginPass.value;
+let users=JSON.parse(localStorage.getItem("users"))||{};
+if(users[u]==p){
+localStorage.setItem("currentUser",u);
+showMain();
+}else alert("Invalid");
+}
+
+// MAIN PAGE
+function showMain(){
+loginPage.classList.add("hidden");
+signupPage.classList.add("hidden");
+mainPage.classList.remove("hidden");
+userDisplay.innerText=localStorage.getItem("currentUser");
+}
+
+// LOGOUT
+function logout(){
+localStorage.removeItem("currentUser");
+location.reload();
+}
+
+// AUTO LOGIN
+if(localStorage.getItem("currentUser")) showMain();
+
+// DATA
+let data={
+"adc":{
+q:["Define SNR","Explain AM/FM","What is modulation"],
+notes:"ADC deals with signals and noise.",
+flow:"Signal → Modulation → Channel → Noise → Receiver",
+plan:"Morning: Theory | Afternoon: Questions | Night: Revision",
+suggest:"Focus on formulas and diagrams for scoring."
+},
+"microprocessor":{
+q:["8051 architecture","Timers","Square wave"],
+notes:"8051 used in embedded systems.",
+flow:"Input → CPU → Output",
+plan:"Morning: Theory | Afternoon: Code | Night: Revise",
+suggest:"Practice programs for better marks."
+}
+};
+
+// GENERATE CONTENT
+function generateContent(){
+let sub=subject.value.toLowerCase();
+let d=data[sub];
+if(!d) return output.innerHTML="No data";
+
+let progress=Math.floor(Math.random()*100);
+
+output.innerHTML=`
+<div class="card">
+<h3>Important Questions</h3>
+<ul>${d.q.map(x=>"<li>"+x+"</li>").join("")}</ul>
+</div>
+
+<div class="card">
+<h3>Short Notes</h3>
+<p>${d.notes}</p>
+</div>
+
+<div class="card">
+<h3>Flowchart</h3>
+<div class="flowchart">${d.flow}</div>
+</div>
+
+<div class="card">
+<h3>1-Day Plan</h3>
+<p>${d.plan}</p>
+</div>
+
+<div class="card">
+<h3>🤖 AI Suggestion</h3>
+<p>${d.suggest}</p>
+</div>
+`;
+
+updateChart(progress);
+}
+
+// GRAPH
+function updateChart(val){
+new Chart(document.getElementById("chart"),{
+type:"doughnut",
+data:{
+labels:["Progress","Remaining"],
+datasets:[{data:[val,100-val]}]
+}
+});
+}
+
+// PDF DOWNLOAD
+function downloadPDF(){
+let { jsPDF } = window.jspdf;
+let doc=new jsPDF();
+doc.text("Exam Emergency Kit Notes",10,10);
+doc.text(document.getElementById("output").innerText,10,20);
+doc.save("notes.pdf");
+}
+
+</script>
+
+</body>
+</html>
